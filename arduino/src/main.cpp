@@ -1,14 +1,13 @@
 #include <Arduino.h>
 
-void setup()
-{
-    pinMode(LED_BUILTIN, OUTPUT); // Ustawienie pinu LED jako wyjście
+void setup() {
+  Serial.begin(9600); // start komunikacji szeregowej
 }
 
-void loop()
-{
-    digitalWrite(LED_BUILTIN, HIGH); // Włącz diodę
-    delay(1000);                     // Czekaj 1 sekundę
-    digitalWrite(LED_BUILTIN, LOW);  // Wyłącz diodę
-    delay(1000);                     // Czekaj 1 sekundę
+void loop() {
+  if (Serial.available() > 0) {
+    char c = Serial.read();  
+    Serial.print("Odebrano: ");
+    Serial.println(c);
+  }
 }
