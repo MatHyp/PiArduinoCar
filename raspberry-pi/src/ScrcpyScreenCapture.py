@@ -49,16 +49,23 @@ class ScrcpyScreenCapture:
 
     def _read_tcp_to_buffer(self):
         """
-        Continuously reads binary data from a subprocess pipe and appends it to a shared buffer in a thread-safe way.
+        Continuously reads binary data from a TCP socket and appends it to a shared buffer in a thread-safe way.
 
         Parameters:
-        - pipe: file-like object (e.g., subprocess stdout or stderr)
-        - buffer: deque acting as a thread-safe buffer to store chunks
-        - lock: threading.Lock instance for synchronizing access to the buffer
-        - running_event: threading.Event used to control when reading should stop
-        - name: str identifier used for logging purposes
+        - tcp_socket (socket.socket): The connected TCP socket to read binary data from.
+
+        Shared Resources (instance attributes):
+        - h264_buffer (collections.deque): Thread-safe buffer to store received data chunks.
+        - buffer_lock (threading.Lock): Used to synchronize access to the buffer.
+        - running (threading.Event): Controls when reading should continue or stop.
+        - chunk_size (int): Number of bytes to read from the socket at once.
+
+        Behavior:
+        - Continuously reads from the socket while `running` is set.
+        - Appends each chunk to the buffer with proper thread synchronization.
+        - Stops gracefully on socket closure or exception.
         """
-        
+
         while self.running.is_set():
             try:
                 chunk = self.tcp_socket.recv(self.chunk_size)
@@ -84,22 +91,26 @@ class ScrcpyScreenCapture:
 
     def _send_h264_data(self):
         """
-        Continuously reads binary data from a TCP socket and appends it to a shared buffer in a thread-safe way.
-
-        Parameters:
-        - tcp_socket (socket.socket): The connected TCP socket to read binary data from.
-
-        Shared Resources (instance attributes):
-        - h264_buffer (collections.deque): Thread-safe buffer to store received data chunks.
-        - buffer_lock (threading.Lock): Used to synchronize access to the buffer.
-        - running (threading.Event): Controls when reading should continue or stop.
-        - chunk_size (int): Number of bytes to read from the socket at once.
+        Continuously sends H264 video chunks over UDP from a shared buffer in a thread-safe manner.
 
         Behavior:
-        - Continuously reads from the socket while `running` is set.
-        - Appends each chunk to the buffer with proper thread synchronization.
-        - Stops gracefully on socket closure or exception.
+        - Initializes a UDP socket if not already created.
+        - While the `running` flag is set:
+            - Retrieves H264-encoded chunks from `h264_buffer` (thread-safe).
+            - Sends each chunk to the configured UDP address and port.
+        - Gracefully handles exceptions during transmission.
+        - Ensures the UDP socket is closed cleanly on exit.
+
+        Shared Resources (instance attributes):
+        - h264_buffer (collections.deque): Buffer storing video chunks.
+        - buffer_lock (threading.Lock): Synchronizes access to the buffer.
+        - running (threading.Event): Controls the send loop.
+        - udp_socket (socket.socket): The socket used for UDP transmission.
+        - udp_ip (str): IP address of the UDP receiver.
+        - udp_port (int): Port number of the UDP receiver.
         """
+
+
 
         if self.udp_socket is None:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -144,12 +155,10 @@ class ScrcpyScreenCapture:
             # Start TCP reader thread
             self.tcp_reader_thread = threading.Thread(
                 target=self._read_tcp_to_buffer,
-                # args=(),
                 daemon=False,
                 name="TCPReaderThread"
             )
             self.tcp_reader_thread.start()
-
             
             # Start UDP sender thread
             self.sender_thread = threading.Thread(
