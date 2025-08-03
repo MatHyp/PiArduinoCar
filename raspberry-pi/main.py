@@ -1,22 +1,18 @@
 import asyncio
 from src.SerialConnection import SerialConnection
 from src.WebSocketsClient import websocket_client
+from src.ScrcpyScreenCapture import ScrcpyScreenCapture
 
-WS_URI = "ws://localhost:8181"
+import socket # Dodane dla faktycznego wysyłania UDP
+
 
 def main():
-    try:
-        with SerialConnection('/dev/ttyACM0', 9600, timeout=1) as serial_conn:
 
-            response = serial_conn.read_line()
-            if response:
-                print("Initial response from Arduino:", response)
 
-            # Run the async WebSocket client, passing serial connection instance
-            asyncio.run(websocket_client(WS_URI, serial_conn))
+    capture_system = ScrcpyScreenCapture()
+    capture_system.start()
+   
 
-    except Exception as e:
-        print(f"Error in main: {e}")
 
 if __name__ == "__main__":
     main()

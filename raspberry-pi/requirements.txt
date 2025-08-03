@@ -1,4 +1,5 @@
 pyserial
 websockets
 asyncio
-websockets
+numpy
+opencv-python
