@@ -19,14 +19,14 @@ class ScrcpyScreenCapture:
 
         # Constructor arguments into instance attributes
         self.chunk_size = chunk_size
-        self.buffer_max_chunks = buffer_max_chunks  # ✅ correct        self.udp_ip = udp_ip
+        self.buffer_max_chunks = buffer_max_chunks  
         
-        self.udp_port = udp_port
 
         self.tcp_host = tcp_host
         self.tcp_port = tcp_port
 
         self.udp_ip = udp_ip
+        self.udp_port = udp_port
 
         # H264 PIPO Buffer and Mutex (lock) to safely synchronize access 
         self.h264_buffer = deque(maxlen=buffer_max_chunks)
@@ -41,41 +41,13 @@ class ScrcpyScreenCapture:
         # Thread handles for background tasks (stderr reading, ffmpeg monitoring, and UDP sending)        
         self.tcp_reader_thread = None
 
-        self.scrcpy_stderr_thread: threading.Thread = None
-        self.ffmpeg_reader_monitor_thread: threading.Thread = None
-        self.sender_thread: threading.Thread = None
-
         # UDP socket used to send encoded video chunks
-        self.udp_socket: socket.socket = None
+        self.tcp_socket = None
+        self.udp_socket = None
 
 
-    # def _read_tcp_to_buffer(self, tcp_socket: socket.socket):
-            # """
-            # Continuously reads binary data from a subprocess pipe and appends it to a shared buffer in a thread-safe way.
 
-            # Parameters:
-            # - pipe: file-like object (e.g., subprocess stdout or stderr)
-            # - buffer: deque acting as a thread-safe buffer to store chunks
-            # - lock: threading.Lock instance for synchronizing access to the buffer
-            # - running_event: threading.Event used to control when reading should stop
-            # - name: str identifier used for logging purposes
-            # """
-        
-    #         while self.running.is_set():
-    #                 # Read raw H264 data
-    #             chunk = tcp_socket.recv(self.chunk_size)
-    #             # if not chunk:
-    #             #     print("[TCP_READER] Connection closed by server")
-    #             #     break
-                    
-    #                 # Add to buffer
-    #             with self.buffer_lock:
-    #                 self.h264_buffer.append(chunk)
-    #                 print(f"[TCP_READER] Read {len(chunk)} bytes. Buffer: {len(self.h264_buffer)}/{self.h264_buffer.maxlen}")
-                
-
-
-    def _read_tcp_to_buffer(self, tcp_socket: socket.socket):
+    def _read_tcp_to_buffer(self):
         """
         Continuously reads binary data from a subprocess pipe and appends it to a shared buffer in a thread-safe way.
 
@@ -89,7 +61,7 @@ class ScrcpyScreenCapture:
         
         while self.running.is_set():
             try:
-                chunk = tcp_socket.recv(self.chunk_size)
+                chunk = self.tcp_socket.recv(self.chunk_size)
 
                 if chunk:
                     with self.buffer_lock:
@@ -168,17 +140,16 @@ class ScrcpyScreenCapture:
             # Create and configure TCP socket
             self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tcp_socket.connect((self.tcp_host, self.tcp_port))
-            self.tcp_socket.settimeout(2.0)  # Allow periodic thread checks
             
             # Start TCP reader thread
             self.tcp_reader_thread = threading.Thread(
                 target=self._read_tcp_to_buffer,
-                args=(self.tcp_socket,),
+                # args=(),
                 daemon=False,
                 name="TCPReaderThread"
             )
-
             self.tcp_reader_thread.start()
+
             
             # Start UDP sender thread
             self.sender_thread = threading.Thread(
@@ -186,11 +157,10 @@ class ScrcpyScreenCapture:
                 daemon=False,
                 name="UDPSenderThread"
             )
-
             self.sender_thread.start()
-        
+
             return True
-        
+            
         except Exception as e:
             print(f"[!!!] Connection failed: {e}")
             self.stop()
@@ -198,19 +168,5 @@ class ScrcpyScreenCapture:
 
     def stop(self):
         print("\n[*] Stopping all processes and threads...")
-        # self.running.clear()  # Signal threads to stop
 
-        # # Wait for the TCP reader thread to finish
-        # if self.tcp_reader_thread and self.tcp_reader_thread.is_alive():
-        #     self.tcp_reader_thread.join()
 
-        # # Wait for the UDP sender thread to finish
-        # if self.sender_thread and self.sender_thread.is_alive():
-        #     self.sender_thread.join()
-
-        # # Close the TCP socket
-        # if hasattr(self, 'tcp_socket') and self.tcp_socket:
-        #     self.tcp_socket.close()
-        #     print("[*] TCP socket closed.")
-
-        print("[*] All processes and threads have been properly shut down.")
