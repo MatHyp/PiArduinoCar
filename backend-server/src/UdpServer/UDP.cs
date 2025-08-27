@@ -8,7 +8,7 @@ namespace UDP
     public class UDPSocket
     {
         private Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        private const int bufSize = 4096;      
+        private const int bufSize = 4096;
         private State state = new State();
         private EndPoint epFrom = new IPEndPoint(IPAddress.Any, 0);
         private AsyncCallback recv = null;

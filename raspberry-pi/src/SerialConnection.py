@@ -11,12 +11,11 @@ class SerialConnection:
     def open(self):
         try:
             self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
-            time.sleep(2)
-            print(f"Serial port {self.port} opened")
+            print(f"Opened serial port {self.port} at {self.baudrate} baud")
         except serial.SerialException as e:
             print(f"Serial error: {e}")
             self.ser = None
-
+            
     def write(self, data: bytes):
         if self.ser and self.ser.is_open:
             self.ser.write(data)
