@@ -1,17 +1,29 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.ReactiveUI;
 
-using FleckWebSocketApp.WebSockets;
-using UDP; // Użyj przestrzeni nazw z udp.cs
-class Program
+namespace BackendServer
 {
-    static void Main(string[] args)
+    class Program
     {
+        [STAThread]
+        static void Main(string[] args)
+        {
+            // Start backend servers in background threads
+            Task.Run(() =>
+            {
+                
+            });
 
-        UDPSocket udpServer = new UDPSocket();
-        udpServer.Server("127.0.0.1", 27000);
+            // Start Avalonia GUI
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        }
 
-
-
-        Console.ReadKey();
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .LogToTrace()
+                .UseReactiveUI();
     }
 }

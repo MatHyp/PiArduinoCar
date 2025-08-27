@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="BackendServer.MainWindow"
+        Width="800" Height="600"
+        Background="Black"
+        Title="BackendServer GUI">
+
+  <Grid>
+    <!-- Steering keys container -->
+    <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- W Key -->
+      <Border x:Name="WKey" Grid.Row="0" Grid.Column="1" Width="60" Height="60" Background="Gray" BorderBrush="White" BorderThickness="2">
+        <TextBlock Text="W" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24"/>
+      </Border>
+
+      <!-- A Key -->
+      <Border x:Name="AKey" Grid.Row="1" Grid.Column="0" Width="60" Height="60" Background="Gray" BorderBrush="White" BorderThickness="2">
+        <TextBlock Text="A" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24"/>
+      </Border>
+
+      <!-- S Key -->
+      <Border x:Name="SKey" Grid.Row="1" Grid.Column="1" Width="60" Height="60" Background="Gray" BorderBrush="White" BorderThickness="2">
+        <TextBlock Text="S" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24"/>
+      </Border>
+
+      <!-- D Key -->
+      <Border x:Name="DKey" Grid.Row="1" Grid.Column="2" Width="60" Height="60" Background="Gray" BorderBrush="White" BorderThickness="2">
+        <TextBlock Text="D" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24"/>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>
