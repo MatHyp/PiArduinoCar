@@ -1,103 +1,39 @@
-﻿using H264Sharp;
+﻿
+
+using H264Sharp;
+using h264;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Collections.Generic;
-using System.Text;
 
-// H264Sharp configuration
-var config = ConverterConfig.Default;
-config.EnableSSE = 1;
-config.EnableNeon = 1;
-config.EnableAvx2 = 1;
-config.NumThreads = Environment.ProcessorCount;
-config.EnableCustomthreadPool = 1;
-Converter.SetConfig(config);
+string inputPath = "input.jpg";
+using var image = Image.Load<Rgb24>(inputPath); 
 
-// Create H264 decoder
-using var decoder = new H264Decoder();
+byte[] pixels = new byte[image.Width * image.Height * 3];
+image.CopyPixelDataTo(pixels);
 
-// Try explicit configuration
+var rgbIn = new RgbImage(ImageFormat.Rgb, image.Width, image.Height, pixels);
+var h264processor = new H264ImageProcessor(1920, 1080);
 
-decoder.Initialize();
+EncodedData[] encodedFrames = h264processor.encodedImage(rgbIn);
 
-// UDP setup
-const int port = 27000;
-using var udpClient = new UdpClient(port);
-Console.WriteLine($"Listening for H.264 stream on port {port}...");
+h264processor.decodeImage(encodedFrames);
 
-int frameCount = 0;
-var remoteEP = new IPEndPoint(IPAddress.Any, 0);
-var frameBuffer = new List<byte>();
-
-// Diagnostic counters
-int packetCount = 0;
-int totalBytes = 0;
-
-while (true)
+void CheckH264Format(EncodedData[] frames)
 {
-    try
+    foreach (var frame in frames)
     {
-        byte[] packet = udpClient.Receive(ref remoteEP);
-        packetCount++;
-        totalBytes += packet.Length;
-
-        Console.WriteLine($"Packet #{packetCount}: {packet.Length} bytes | Total: {totalBytes} bytes");
-
-        bool isNewFrame = packet.Length >= 4 &&
-            ((packet[0] == 0 && packet[1] == 0 && packet[2] == 0 && packet[3] == 1) ||
-             (packet[0] == 0 && packet[1] == 0 && packet[2] == 1));
-
-        // Modified assembly logic
-        if (isNewFrame && frameBuffer.Count > 0)
+        byte[] bytes = frame.GetBytes();
+        for (int i = 0; i < bytes.Length - 4; i++)
         {
-            Console.WriteLine($"Processing frame with {frameBuffer.Count} bytes");
-            ProcessFrame(decoder, frameBuffer.ToArray(), ref frameCount);
-            frameBuffer.Clear();
+            // Look for 3- or 4-byte start code
+            if ((bytes[i] == 0x00 && bytes[i + 1] == 0x00 && bytes[i + 2] == 0x01) ||
+                (bytes[i] == 0x00 && bytes[i + 1] == 0x00 && bytes[i + 2] == 0x00 && bytes[i + 3] == 0x01))
+            {
+                int nalIndex = (bytes[i + 2] == 0x01) ? i + 3 : i + 4;
+                byte nalHeader = bytes[nalIndex];
+                int nalType = nalHeader & 0x1F; // last 5 bits
+                Console.WriteLine($"NAL unit found at {i}, type: {nalType}");
+            }
         }
-
-        frameBuffer.AddRange(packet);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error: {ex.Message}");
-    }
-}
-
-void ProcessFrame(H264Decoder decoder, byte[] frameData, ref int frameCount)
-{
-    try
-    {
-        // Diagnostic: Show frame header
-        string header = frameData.Length >= 8
-            ? BitConverter.ToString(frameData, 0, 8).Replace("-", " ")
-            : "N/A";
-        Console.WriteLine($"Frame {frameCount} header: {header}");
-
-        // Create output image (temporary dimensions)
-        var rgbOut = new RgbImage(ImageFormat.Bgr, 1, 1);
-
-        // Save raw data for inspection
-        System.IO.File.WriteAllBytes($"raw_{frameCount}.h264", frameData);
-        Console.WriteLine($"Saved raw_{frameCount}.h264 ({frameData.Length} bytes)");
-
-        // Try decoding
-        if (decoder.Decode(frameData, 0, frameData.Length, true, out DecodingState ds, ref rgbOut))
-        {
-            Console.WriteLine($"Decoding successful! {rgbOut.Width}x{rgbOut.Height}");
-            // ... rest of image saving code ...
-        }
-        else
-        {
-            Console.WriteLine($"Decoding failed. State: ");
-        }
-
-        frameCount++;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Processing error: {ex.Message}");
     }
 }
