@@ -4,11 +4,10 @@ using SixLabors.ImageSharp.PixelFormats;
 using System;
 namespace h264
 {
-
     public class H264ImageProcessor : IDisposable
     {
         private readonly H264Encoder _encoder;
-        private readonly H264Decoder _decoder;
+        public readonly H264Decoder _decoder;
         private readonly int _width;
         private readonly int _height;
         private readonly byte[] _outBuffer;
@@ -43,62 +42,61 @@ namespace h264
             return encodedFrames;
         }
 
-        public RgbImage decodeImage(EncodedData[] encodedArr)
-        {
+        // public RgbImage decodeImage(EncodedData[] encodedArr, string outputPrefix)
+        // {
+        //     var rgbOut = new RgbImage(ImageFormat.Rgb, _width, _height, _outBuffer);
 
+        //     int frameIndex = 0;
+        //     foreach (var encoded in encodedArr)
+        //     {
+        //         if (_decoder.Decode(encoded, noDelay: true, out DecodingState _, ref rgbOut))
+        //         {
+        //             using var outputImage = Image.LoadPixelData<Rgb24>(_outBuffer, _width, _height);
+        //             outputImage.Save($"{outputPrefix}_{frameIndex}.jpg");
+        //             frameIndex++;
+        //         }
+        //     }
+
+        //     return rgbOut;
+        // }
+
+
+        public void ProcessImage(string inputPath, string outputPrefix, int iterations = 2)
+        {
+            using var image = Image.Load<Rgb24>(inputPath);
+
+            if (image.Width != _width || image.Height != _height)
+                throw new ArgumentException("Rozdzielczość obrazu nie pasuje do ustawień procesora.");
+
+
+            byte[] data = new byte[_width * _height * 3];
+            image.CopyPixelDataTo(data);
+
+            var rgbIn = new RgbImage(ImageFormat.Rgb, _width, _height, data);
             var rgbOut = new RgbImage(ImageFormat.Rgb, _width, _height, _outBuffer);
 
-
-            using var outputImage = Image.LoadPixelData<Rgb24>(_outBuffer, _width, _height);
-            foreach (var encoded in encodedArr)
+            for (int j = 0; j < iterations; j++)
+            {
+                if (!_encoder.Encode(rgbIn, out EncodedData[] encodedFrames))
                 {
+                    Console.WriteLine("skipped");
+
+                    continue;
+                }
+
+                foreach (var encoded in encodedFrames)
+                {
+
                     if (_decoder.Decode(encoded, noDelay: true, out DecodingState _, ref rgbOut))
                     {
                         Console.WriteLine($"F:{encoded.FrameType} size: {encoded.Length}");
 
-                        outputImage.Save("{outputPrefix}_{j}.jpg");
+                        using var outputImage = Image.LoadPixelData<Bgr24>(_outBuffer, _width, _height);
+                        outputImage.Save($"{outputPrefix}_{j}.jpg");
                     }
-            }            
-
-             
-            return rgbOut;
+                }
+            }
         }
-        
-
-        // public void ProcessImage(string inputPath, string outputPrefix, int iterations = 2)
-        // {
-        //     using var image = Image.Load<Rgb24>(inputPath);
-
-        //     if (image.Width != _width || image.Height != _height)
-        //         throw new ArgumentException("Rozdzielczość obrazu nie pasuje do ustawień procesora.");
-
-        //     // Pobranie pikseli w formacie RGB
-        //     byte[] data = new byte[_width * _height * 3];
-        //     image.CopyPixelDataTo(data);
-
-        //     var rgbIn = new RgbImage(ImageFormat.Rgb, _width, _height, data);
-        //     var rgbOut = new RgbImage(ImageFormat.Rgb, _width, _height, _outBuffer);
-
-        //     for (int j = 0; j < iterations; j++)
-        //     {
-        //         if (!_encoder.Encode(rgbIn, out EncodedData[] encodedFrames))
-        //         {
-        //             Console.WriteLine("skipped");
-        //             continue;
-        //         }
-
-        //     foreach (var encoded in encodedFrames)
-        //     {
-        //         if (_decoder.Decode(encoded, noDelay: true, out DecodingState _, ref rgbOut))
-        //         {
-        //             Console.WriteLine($"F:{encoded.FrameType} size: {encoded.Length}");
-
-        //             using var outputImage = Image.LoadPixelData<Bgr24>(_outBuffer, _width, _height);
-        //             outputImage.Save($"{outputPrefix}_{j}.jpg");
-        //         }
-        //     }
-        // }
-        // }
 
         public void Dispose()
         {
