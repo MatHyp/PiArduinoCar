@@ -10,7 +10,7 @@ namespace BackendServer
         public MainWindow()
         {
             InitializeComponent();
-            udp.Client("127.0.0.1", 12000);
+            // udp.Client("127.0.0.1", 12000);
 
 
             // Keyboard events
@@ -20,29 +20,29 @@ namespace BackendServer
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
         {
-            switch (e.Key)
-            {
-                case Key.W:
+            // switch (e.Key)
+            // {
+            //     case Key.W:
 
-                    WKey.Background = Brushes.LimeGreen;
-                    udp.Send("W");
-                    break;
+            //         WKey.Background = Brushes.LimeGreen;
+            //         udp.Send("W");
+            //         break;
 
-                case Key.A:
-                    AKey.Background = Brushes.LimeGreen;
-                    udp.Send("A");
+            //     case Key.A:
+            //         AKey.Background = Brushes.LimeGreen;
+            //         udp.Send("A");
 
-                    break;
-                case Key.S:
-                    SKey.Background = Brushes.LimeGreen;
-                    udp.Send("S");
-                    break;
-                case
-                    Key.D:
-                    DKey.Background = Brushes.LimeGreen;
-                    udp.Send("D");
-                    break;
-            }
+            //         break;
+            //     case Key.S:
+            //         SKey.Background = Brushes.LimeGreen;
+            //         udp.Send("S");
+            //         break;
+            //     case
+            //         Key.D:
+            //         DKey.Background = Brushes.LimeGreen;
+            //         udp.Send("D");
+            //         break;
+            // }
         }
 
         private void OnKeyUp(object? sender, KeyEventArgs e)
