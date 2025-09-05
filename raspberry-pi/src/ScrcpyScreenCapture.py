@@ -126,7 +126,6 @@ class ScrcpyScreenCapture:
                 if chunk:
                     self.udp_socket.sendto(chunk, (self.udp_ip, self.udp_port))
 
-            # Small sleep to avoid 100% CPU usage when buffer is empty
 
         except Exception as e:
             print(f"[{threading.current_thread().name}] Błąd podczas wysyłania UDP: {e}")
