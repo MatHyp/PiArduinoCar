@@ -1,10 +1,10 @@
 #!/bin/bash
 
-echo "----- [🛠] Checking for system updates..."
-sudo apt update -y
+# echo "----- [🛠] Checking for system updates..."
+# sudo apt update -y
 
-echo "----- [📦] Ensuring required system packages are installed..."
-sudo apt install -y python3 python3-venv python3-pip git
+# echo "----- [📦] Ensuring required system packages are installed..."
+# sudo apt install -y python3 python3-venv python3-pip git
 
 # Check if virtual environment already exists
 if [ ! -d ".venv" ]; then
