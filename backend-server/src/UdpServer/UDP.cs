@@ -8,49 +8,70 @@ namespace UDP
     public class UDPSocket
     {
         private Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        private const int bufSize = 4096;
-        private State state = new State();
+        private const int bufSize = 1400;
         private EndPoint epFrom = new IPEndPoint(IPAddress.Any, 0);
         private AsyncCallback recv = null;
-
-        public class State
-        {
-            public byte[] buffer = new byte[bufSize];
-        }
+        public byte[] buffer = new byte[bufSize];
+        int bytesInBuffer = 0;
 
         public void Server(string address, int port)
         {
             _socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true);
             _socket.Bind(new IPEndPoint(IPAddress.Parse(address), port));
-            Receive();
+
+            Console.WriteLine("Server");
+
+            StartReceiveingData();
+
         }
 
-        public void Client(string address, int port)
+        private void StartReceiveingData()
         {
-            _socket.Connect(IPAddress.Parse(address), port);
-            Receive();
-        }
 
-        public void Send(string text)
-        {
-            byte[] data = Encoding.ASCII.GetBytes(text);
-            _socket.BeginSend(data, 0, data.Length, SocketFlags.None, (ar) =>
+            if (bytesInBuffer >= 1400)
             {
-                State so = (State)ar.AsyncState;
-                int bytes = _socket.EndSend(ar);
-                Console.WriteLine("SEND: {0}, {1}", bytes, text);
-            }, state);
+                Console.WriteLine("Buffer is full, stopping receive.");
+                _socket.Close();
+                return;
+            }
+
+
+            try
+            {
+                IPEndPoint ipeSender = new IPEndPoint(IPAddress.Any, 0);
+                EndPoint epSender = (EndPoint)ipeSender;
+
+                _socket.BeginReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref epSender, new AsyncCallback(OnReceive), epSender);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
 
-        private void Receive()
+        private void OnReceive(IAsyncResult ar)
         {
-            _socket.BeginReceiveFrom(state.buffer, 0, bufSize, SocketFlags.None, ref epFrom, recv = (ar) =>
+            try
             {
-                State so = (State)ar.AsyncState;
-                int bytes = _socket.EndReceiveFrom(ar, ref epFrom);
-                _socket.BeginReceiveFrom(so.buffer, 0, bufSize, SocketFlags.None, ref epFrom, recv, so);
-                Console.WriteLine("RECV: {0}: {1}, {2}", epFrom.ToString(), bytes, Encoding.ASCII.GetString(so.buffer, 0, bytes));
-            }, state);
+
+                IPEndPoint ipeSender = new IPEndPoint(IPAddress.Any, 0);
+                EndPoint epSender = (EndPoint)ipeSender;
+                int numBytes = _socket.EndReceiveFrom(ar, ref epSender);
+
+                using (FileStream fs = new FileStream("receivedData.bin", FileMode.Append, FileAccess.Write))
+                {
+                    fs.Write(buffer, 0, numBytes);
+                }
+
+                bytesInBuffer++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+
+            StartReceiveingData();
         }
     }
 }
