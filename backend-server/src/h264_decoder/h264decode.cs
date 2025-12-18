@@ -42,25 +42,6 @@ namespace h264
             return encodedFrames;
         }
 
-        // public RgbImage decodeImage(EncodedData[] encodedArr, string outputPrefix)
-        // {
-        //     var rgbOut = new RgbImage(ImageFormat.Rgb, _width, _height, _outBuffer);
-
-        //     int frameIndex = 0;
-        //     foreach (var encoded in encodedArr)
-        //     {
-        //         if (_decoder.Decode(encoded, noDelay: true, out DecodingState _, ref rgbOut))
-        //         {
-        //             using var outputImage = Image.LoadPixelData<Rgb24>(_outBuffer, _width, _height);
-        //             outputImage.Save($"{outputPrefix}_{frameIndex}.jpg");
-        //             frameIndex++;
-        //         }
-        //     }
-
-        //     return rgbOut;
-        // }
-
-
         public void ProcessImage(string inputPath, string outputPrefix, int iterations = 2)
         {
             using var image = Image.Load<Rgb24>(inputPath);
